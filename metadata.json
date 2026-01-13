@@ -1,0 +1,5 @@
+{
+  "name": "Eletrolar HomeRepair",
+  "description": "Uma ferramenta simples e rápida para identificar possíveis causas de defeitos em eletrodomésticos, com suporte de IA e estimativas de custo.",
+  "requestFramePermissions": []
+}

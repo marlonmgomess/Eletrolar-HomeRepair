@@ -111,6 +111,37 @@ export const DiagnosisView: React.FC<Props> = ({ diagnosis, appliance, problem, 
     setHasSearchedTechs(true);
   };
 
+  // Helper to render cost meter
+  const renderCostMeter = () => {
+    const levels = {
+      'Baixo': { count: 1, color: 'bg-emerald-500', text: 'text-emerald-600' },
+      'Médio': { count: 2, color: 'bg-amber-500', text: 'text-amber-600' },
+      'Alto': { count: 3, color: 'bg-rose-500', text: 'text-rose-600' }
+    };
+    
+    const config = levels[diagnosis.costLevel] || levels['Médio'];
+    
+    return (
+      <div className="flex flex-col gap-2 mt-3">
+        <div className="flex gap-1.5 h-2">
+          {[1, 2, 3].map((i) => (
+            <div 
+              key={i} 
+              className={`flex-1 rounded-full transition-all duration-500 ${
+                i <= config.count ? config.color : 'bg-slate-200'
+              }`}
+            />
+          ))}
+        </div>
+        <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
+          <span className={diagnosis.costLevel === 'Baixo' ? config.text : 'text-slate-400'}>Baixo</span>
+          <span className={diagnosis.costLevel === 'Médio' ? config.text : 'text-slate-400'}>Médio</span>
+          <span className={diagnosis.costLevel === 'Alto' ? config.text : 'text-slate-400'}>Alto</span>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="bg-white rounded-3xl shadow-xl overflow-hidden mb-8 border border-slate-100">
@@ -157,14 +188,15 @@ export const DiagnosisView: React.FC<Props> = ({ diagnosis, appliance, problem, 
           </section>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-              <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-2 flex items-center gap-1">
-                <i className="fa-solid fa-coins"></i> Custo Médio
-              </h3>
-              <p className="text-2xl font-bold text-slate-800">{diagnosis.costRange}</p>
-              <div className="flex items-center gap-1 mt-1 text-sm text-slate-500">
-                Complexidade: <span className={`font-semibold ${diagnosis.costLevel === 'Baixo' ? 'text-green-600' : diagnosis.costLevel === 'Médio' ? 'text-orange-500' : 'text-red-500'}`}>{diagnosis.costLevel}</span>
+            <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between">
+              <div>
+                <h3 className="text-xs uppercase tracking-wider text-slate-400 font-bold mb-2 flex items-center gap-1">
+                  <i className="fa-solid fa-coins"></i> Investimento Estimado
+                </h3>
+                <p className="text-2xl font-black text-slate-800 tracking-tight">{diagnosis.costRange}</p>
               </div>
+              
+              {renderCostMeter()}
             </div>
 
             <div className="bg-blue-50 p-5 rounded-2xl border border-blue-100">
@@ -234,7 +266,7 @@ export const DiagnosisView: React.FC<Props> = ({ diagnosis, appliance, problem, 
           ) : (
             <button 
               onClick={handleDetailedDiagnosis}
-              className="w-full mb-8 py-5 bg-slate-900 hover:bg-black text-white font-bold rounded-2xl flex items-center justify-center gap-3 transition-all hover:scale-[1.01] active:scale-95 shadow-xl shadow-slate-200"
+              className="w-full mb-8 py-5 bg-slate-900 hover:bg-black text-white font-black rounded-2xl flex items-center justify-center gap-3 transition-all hover:scale-[1.01] active:scale-95 shadow-xl shadow-slate-200"
             >
               <i className="fa-solid fa-wand-magic-sparkles text-blue-400"></i>
               Diagnóstico Detalhado (IA)

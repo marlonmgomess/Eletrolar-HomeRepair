@@ -5,7 +5,11 @@ export type ApplianceType =
   | 'ar-condicionado' 
   | 'air-fryer' 
   | 'microondas' 
-  | 'forno-eletrico';
+  | 'forno-eletrico'
+  | 'freezer'
+  | 'fogao'
+  | 'secadora'
+  | 'centrifuga-tanquinho';
 
 export type ProblemType = 
   | 'nao-liga' 
@@ -32,7 +36,16 @@ export type ProblemType =
   | 'nao-aquece'
   | 'assando-desigual'
   | 'porta-nao-fecha'
-  | 'luz-queimada';
+  | 'luz-queimada'
+  // Novos problemas
+  | 'chama-amarela'
+  | 'boca-nao-acende'
+  | 'cheiro-gas'
+  | 'tambor-travado'
+  | 'nao-seca-roupa'
+  | 'alarme-apitando'
+  | 'motor-nao-para'
+  | 'vazamento-tanque';
 
 export interface Cause {
   description: string;
@@ -67,7 +80,7 @@ export interface Appliance {
 }
 
 export interface Problem {
-  id: ProblemType;
+  id: string; // Mudado para string para aceitar IDs compostos ou novos
   label: string;
   icon: string;
 }

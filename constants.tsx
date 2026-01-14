@@ -4,7 +4,11 @@ import { Appliance, Problem, Diagnosis, ApplianceType } from './types';
 export const APPLIANCES: Appliance[] = [
   { id: 'lavadora', label: 'Lavadora', icon: 'fa-soap', color: 'bg-blue-500' },
   { id: 'geladeira', label: 'Geladeira', icon: 'fa-refrigerator', color: 'bg-cyan-500' },
+  { id: 'freezer', label: 'Freezer', icon: 'fa-box-open', color: 'bg-indigo-500' },
+  { id: 'fogao', label: 'Fogão', icon: 'fa-fire', color: 'bg-orange-600' },
   { id: 'ar-condicionado', label: 'Ar-condicionado', icon: 'fa-wind', color: 'bg-sky-500' },
+  { id: 'secadora', label: 'Secadora', icon: 'fa-shirt', color: 'bg-blue-400' },
+  { id: 'centrifuga-tanquinho', label: 'Tanquinho', icon: 'fa-water', color: 'bg-teal-500' },
   { id: 'air-fryer', label: 'Air Fryer', icon: 'fa-fan', color: 'bg-orange-500' },
   { id: 'microondas', label: 'Microondas', icon: 'fa-wave-square', color: 'bg-purple-500' },
   { id: 'forno-eletrico', label: 'Forno Elétrico', icon: 'fa-fire-burner', color: 'bg-red-500' },
@@ -28,6 +32,30 @@ export const SPECIFIC_PROBLEMS: Record<ApplianceType, Problem[]> = {
     { id: 'vazando-agua-dentro', label: 'Vazando água dentro (gavetas)', icon: 'fa-droplet' },
     { id: 'formando-gelo', label: 'Formando gelo em excesso', icon: 'fa-icicles' },
     { id: 'estalos-fortes', label: 'Estalos fortes constantes', icon: 'fa-bolt-lightning' },
+  ],
+  'freezer': [
+    { id: 'nao-gela-esquenta', label: 'Não está congelando', icon: 'fa-snowflake' },
+    { id: 'alarme-apitando', label: 'Alarme de temperatura apitando', icon: 'fa-bell' },
+    { id: 'formando-gelo', label: 'Excesso de gelo na tampa', icon: 'fa-icicles' },
+    { id: 'motor-nao-para', label: 'Motor funciona sem parar', icon: 'fa-infinity' },
+  ],
+  'fogao': [
+    { id: 'chama-amarela', label: 'Chama amarela / Sujando panela', icon: 'fa-fire' },
+    { id: 'boca-nao-acende', label: 'Boca não acende (faísca ok)', icon: 'fa-xmark' },
+    { id: 'cheiro-gas', label: 'Cheiro de gás constante', icon: 'fa-biohazard' },
+    { id: 'luz-queimada', label: 'Luz do forno não acende', icon: 'fa-lightbulb' },
+  ],
+  'secadora': [
+    { id: 'nao-esquenta', label: 'Gira mas não esquenta', icon: 'fa-temperature-low' },
+    { id: 'tambor-travado', label: 'Tambor não gira', icon: 'fa-circle-stop' },
+    { id: 'nao-seca-roupa', label: 'Demora muito para secar', icon: 'fa-clock' },
+    { id: 'cheiro-ruim', label: 'Cheiro de queimado', icon: 'fa-fire' },
+  ],
+  'centrifuga-tanquinho': [
+    { id: 'nao-centrifuga', label: 'Batedor não gira', icon: 'fa-spinner' },
+    { id: 'vazamento-tanque', label: 'Vazando água pela base', icon: 'fa-faucet-drip' },
+    { id: 'timer-travado', label: 'Timer não volta sozinho', icon: 'fa-clock' },
+    { id: 'faz-barulho', label: 'Barulho de metal batendo', icon: 'fa-hammer' },
   ],
   'ar-condicionado': [
     { id: 'pingando-dentro', label: 'Pingando água dentro de casa', icon: 'fa-droplet' },
@@ -53,6 +81,59 @@ export const SPECIFIC_PROBLEMS: Record<ApplianceType, Problem[]> = {
 };
 
 export const BASE_DIAGNOSES: Record<string, Diagnosis> = {
+  // FOGÃO
+  'fogao-chama-amarela': {
+    causes: [
+      { description: 'Sujeira nos queimadores (gordura)', percentage: 60 },
+      { description: 'Gás de má qualidade ou fim do botijão', percentage: 25 },
+      { description: 'Entrada de ar primário desregulada', percentage: 15 }
+    ],
+    costLevel: 'Baixo', costRange: 'R$ 30 a R$ 120',
+    tip: 'Limpe as bocas com agulha própria e certifique-se de que estão bem secas.'
+  },
+  'fogao-cheiro-gas': {
+    causes: [
+      { description: 'Vazamento na mangueira ou registro', percentage: 50 },
+      { description: 'Abraçadeiras frouxas', percentage: 30 },
+      { description: 'Vazamento interno nos ramais', percentage: 20 }
+    ],
+    costLevel: 'Médio', costRange: 'R$ 50 a R$ 250',
+    tip: 'Use espuma de sabão para testar a mangueira. Se houver bolhas, troque-a imediatamente.'
+  },
+
+  // FREEZER
+  'freezer-alarme-apitando': {
+    causes: [
+      { description: 'Porta mal fechada ou borracha gasta', percentage: 50 },
+      { description: 'Falta de gás por micro-furo', percentage: 30 },
+      { description: 'Placa eletrônica enviando sinal falso', percentage: 20 }
+    ],
+    costLevel: 'Médio', costRange: 'R$ 150 a R$ 700',
+    tip: 'Verifique se não há excesso de alimentos obstruindo o fechamento total da porta.'
+  },
+
+  // SECADORA
+  'secadora-nao-esquenta': {
+    causes: [
+      { description: 'Resistência de aquecimento queimada', percentage: 55 },
+      { description: 'Termostato de segurança (Klicson) aberto', percentage: 35 },
+      { description: 'Placa lógica não envia comando', percentage: 10 }
+    ],
+    costLevel: 'Médio', costRange: 'R$ 180 a R$ 550',
+    tip: 'Limpe o filtro de fiapos; o superaquecimento por falta de fluxo de ar queima a resistência.'
+  },
+
+  // TANQUINHO
+  'centrifuga-tanquinho-vazamento-tanque': {
+    causes: [
+      { description: 'Cubo/Bucha central desgastada', percentage: 70 },
+      { description: 'Mangueira de drenagem furada', percentage: 20 },
+      { description: 'Tanque plástico rachado', percentage: 10 }
+    ],
+    costLevel: 'Baixo', costRange: 'R$ 60 a R$ 180',
+    tip: 'Não deixe água parada no tanquinho por dias; o sabão corrói a vedação do eixo.'
+  },
+
   // LAVADORA
   'lavadora-nao-liga': {
     causes: [

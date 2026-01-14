@@ -15,6 +15,13 @@ export const TechnicianPortal: React.FC<Props> = ({ onClose }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved'>('all');
   
+  // Password Management States
+  const [currentPassInput, setCurrentPassInput] = useState('');
+  const [newPassInput, setNewPassInput] = useState('');
+  const [confirmPassInput, setConfirmPassInput] = useState('');
+  const [passError, setPassError] = useState('');
+  const [passSuccess, setPassSuccess] = useState(false);
+
   // Form States
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
@@ -30,7 +37,6 @@ export const TechnicianPortal: React.FC<Props> = ({ onClose }) => {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const ADMIN_EMAIL = "marlonmgomessd@gmail.com";
-  const ADMIN_PASSWORD = "admin123";
 
   useEffect(() => {
     const storedTechs = JSON.parse(localStorage.getItem('technicians') || '[]');
@@ -39,20 +45,55 @@ export const TechnicianPortal: React.FC<Props> = ({ onClose }) => {
     setSystemFee(storedFee);
   }, [activeTab]);
 
+  const getStoredAdminPassword = () => {
+    return localStorage.getItem('admin_password') || 'admin123';
+  };
+
   const handleTabChange = (tab: 'register' | 'list' | 'settings') => {
     if (tab === 'list' || tab === 'settings') {
       if (!isAdminAuthenticated) {
         const pass = prompt("Senha de administrador:");
-        if (pass === ADMIN_PASSWORD) {
+        if (pass === getStoredAdminPassword()) {
           setIsAdminAuthenticated(true);
           setActiveTab(tab);
-        } else {
-          alert("Acesso negado.");
+        } else if (pass !== null) {
+          alert("Acesso negado. Senha incorreta.");
         }
         return;
       }
     }
     setActiveTab(tab);
+  };
+
+  const handleChangeAdminPassword = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPassError('');
+    setPassSuccess(false);
+
+    const storedPass = getStoredAdminPassword();
+
+    if (currentPassInput !== storedPass) {
+      setPassError('A senha atual está incorreta.');
+      return;
+    }
+
+    if (newPassInput.length < 4) {
+      setPassError('A nova senha deve ter pelo menos 4 caracteres.');
+      return;
+    }
+
+    if (newPassInput !== confirmPassInput) {
+      setPassError('As senhas não coincidem.');
+      return;
+    }
+
+    localStorage.setItem('admin_password', newPassInput);
+    setPassSuccess(true);
+    setCurrentPassInput('');
+    setNewPassInput('');
+    setConfirmPassInput('');
+    
+    setTimeout(() => setPassSuccess(false), 5000);
   };
 
   const handleApproveTechnician = (id: string) => {
@@ -89,8 +130,6 @@ export const TechnicianPortal: React.FC<Props> = ({ onClose }) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validação estrita do telefone (apenas dígitos)
     const cleanPhone = phone.replace(/\D/g, '');
     
     if (!name.trim()) {
@@ -98,9 +137,8 @@ export const TechnicianPortal: React.FC<Props> = ({ onClose }) => {
       return;
     }
     
-    // Validação de comprimento: DDD (2) + Número (8 ou 9) = 10 ou 11 dígitos
     if (cleanPhone.length < 10 || cleanPhone.length > 11) {
-      alert("Número de WhatsApp inválido. Insira o DDD + Número (Ex: 11988887777). Certifique-se de que o número contém apenas dígitos.");
+      alert("Número de WhatsApp inválido. Insira o DDD + Número.");
       return;
     }
 
@@ -134,7 +172,6 @@ export const TechnicianPortal: React.FC<Props> = ({ onClose }) => {
     const existing = JSON.parse(localStorage.getItem('technicians') || '[]');
     localStorage.setItem('technicians', JSON.stringify([...existing, newTech]));
 
-    // Dispara e-mail
     const subject = encodeURIComponent(`Solicitação de Cadastro: ${name} (${city})`);
     const body = encodeURIComponent(
       `Novo técnico aguardando aprovação:\n\n` +
@@ -147,8 +184,6 @@ export const TechnicianPortal: React.FC<Props> = ({ onClose }) => {
     window.location.href = `mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`;
 
     setShowSuccessMessage(true);
-    
-    // Reset form fields
     setName(''); setPhone(''); setCity(''); setPaymentProof(''); setFileName(''); setSelectedSpecialties([]);
   };
 
@@ -174,29 +209,18 @@ export const TechnicianPortal: React.FC<Props> = ({ onClose }) => {
             <i className="fa-solid fa-check text-4xl"></i>
           </div>
         </div>
-        
         <h2 className="text-2xl font-black text-slate-800 mb-4 leading-tight">Cadastro Enviado!</h2>
-        
         <div className="bg-white p-6 rounded-[2rem] border-2 border-slate-50 shadow-sm mb-8">
           <p className="text-slate-600 font-medium leading-relaxed mb-4">
-            Sua solicitação de parceiro já está em nosso sistema e <span className="text-blue-600 font-bold">em fase de revisão</span>.
+            Sua solicitação já está em nosso sistema e <span className="text-blue-600 font-bold">em fase de revisão</span>.
           </p>
           <div className="flex items-center justify-center gap-3 text-amber-600 bg-amber-50 py-3 px-4 rounded-2xl border border-amber-100">
             <i className="fa-solid fa-clock-rotate-left"></i>
             <span className="text-xs font-black uppercase tracking-widest">Prazo: Até 3 dias úteis</span>
           </div>
         </div>
-
-        <p className="text-slate-400 text-sm mb-8 leading-relaxed">
-          Nossa equipe analisará seu comprovante e as especialidades selecionadas antes de liberar seu perfil para os clientes.
-        </p>
-
-        <button 
-          onClick={onClose} 
-          className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3"
-        >
-          <i className="fa-solid fa-house"></i>
-          Voltar para a Home
+        <button onClick={onClose} className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl flex items-center justify-center gap-3">
+          <i className="fa-solid fa-house"></i> Voltar para a Home
         </button>
       </div>
     );
@@ -219,24 +243,9 @@ export const TechnicianPortal: React.FC<Props> = ({ onClose }) => {
       </div>
 
       <div className="flex bg-slate-100 p-1 rounded-2xl mb-8 overflow-x-auto no-scrollbar">
-        <button 
-          onClick={() => handleTabChange('register')}
-          className={`flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'register' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
-        >
-          Cadastro
-        </button>
-        <button 
-          onClick={() => handleTabChange('list')}
-          className={`flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
-        >
-          Gestão {isAdminAuthenticated ? `(${stats.pending})` : '🔒'}
-        </button>
-        <button 
-          onClick={() => handleTabChange('settings')}
-          className={`flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'settings' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}
-        >
-          Configurações {isAdminAuthenticated ? '' : '🔒'}
-        </button>
+        <button onClick={() => handleTabChange('register')} className={`flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'register' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>Cadastro</button>
+        <button onClick={() => handleTabChange('list')} className={`flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'list' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>Gestão {isAdminAuthenticated ? `(${stats.pending})` : '🔒'}</button>
+        <button onClick={() => handleTabChange('settings')} className={`flex-none px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === 'settings' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500'}`}>Configurações {isAdminAuthenticated ? '' : '🔒'}</button>
       </div>
 
       {activeTab === 'register' ? (
@@ -249,218 +258,83 @@ export const TechnicianPortal: React.FC<Props> = ({ onClose }) => {
               Anexe o comprovante abaixo para nossa equipe aprovar seu perfil.
             </p>
           </div>
-
           <div className="space-y-4">
             <div className="bg-white p-6 rounded-3xl border-2 border-slate-100 space-y-4">
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Dados Pessoais</label>
-                <input 
-                  type="text" 
-                  value={name} 
-                  onChange={(e) => setName(e.target.value)} 
-                  className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-600 font-medium mb-3" 
-                  placeholder="Nome Completo *" 
-                />
-                <input 
-                  type="tel" 
-                  value={phone} 
-                  onChange={(e) => setPhone(e.target.value)} 
-                  className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-600 font-medium" 
-                  placeholder="WhatsApp (DDD + Número) *" 
-                />
-                <p className="text-[9px] text-slate-400 mt-1 ml-1 font-bold">Apenas números, Ex: 11999998888</p>
-              </div>
-
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Localização</label>
-                <input 
-                  type="text" 
-                  value={city} 
-                  onChange={(e) => setCity(e.target.value)} 
-                  className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-600 font-medium" 
-                  placeholder="Sua Cidade de Atuação (Ex: São Paulo) *" 
-                />
-              </div>
-              
-              <div>
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 ml-1">Pagamento</label>
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
-                <button type="button" onClick={() => fileInputRef.current?.click()} className={`w-full p-6 border-2 border-dashed rounded-3xl flex flex-col items-center gap-2 ${paymentProof ? 'border-green-500 bg-green-50' : 'border-slate-200 bg-slate-50'}`}>
-                  <i className={`fa-solid ${paymentProof ? 'fa-check-circle text-green-500' : 'fa-cloud-arrow-up text-slate-400'} text-2xl`}></i>
-                  <span className="text-xs font-bold text-slate-500">{fileName || 'Anexar Comprovante *'}</span>
-                </button>
-              </div>
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-600 font-medium" placeholder="Nome Completo *" />
+              <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-600 font-medium" placeholder="WhatsApp (DDD + Número) *" />
+              <input type="text" value={city} onChange={(e) => setCity(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-600 font-medium" placeholder="Sua Cidade de Atuação *" />
+              <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="image/*,application/pdf" className="hidden" />
+              <button type="button" onClick={() => fileInputRef.current?.click()} className={`w-full p-6 border-2 border-dashed rounded-3xl flex flex-col items-center gap-2 ${paymentProof ? 'border-green-500 bg-green-50' : 'border-slate-200 bg-slate-50'}`}>
+                <i className={`fa-solid ${paymentProof ? 'fa-check-circle text-green-500' : 'fa-cloud-arrow-up text-slate-400'} text-2xl`}></i>
+                <span className="text-xs font-bold text-slate-500">{fileName || 'Anexar Comprovante *'}</span>
+              </button>
             </div>
-
-            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">Especialidades</p>
             <div className="grid grid-cols-2 gap-2">
               {APPLIANCES.map(app => (
-                <button
-                  key={app.id}
-                  type="button"
-                  onClick={() => setSelectedSpecialties(prev => prev.includes(app.id) ? prev.filter(s => s !== app.id) : [...prev, app.id])}
-                  className={`p-4 rounded-2xl border-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${
-                    selectedSpecialties.includes(app.id) ? 'border-blue-600 bg-blue-600 text-white shadow-md' : 'border-white bg-white text-slate-400'
-                  }`}
-                >
-                  <i className={`fa-solid ${app.icon}`}></i>
-                  {app.label}
+                <button key={app.id} type="button" onClick={() => setSelectedSpecialties(prev => prev.includes(app.id) ? prev.filter(s => s !== app.id) : [...prev, app.id])} className={`p-4 rounded-2xl border-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${selectedSpecialties.includes(app.id) ? 'border-blue-600 bg-blue-600 text-white shadow-md' : 'border-white bg-white text-slate-400'}`}>
+                  <i className={`fa-solid ${app.icon}`}></i> {app.label}
                 </button>
               ))}
             </div>
           </div>
-
-          <button type="submit" className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all">
-            Enviar Cadastro para Marlon
-          </button>
+          <button type="submit" className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl">Enviar Cadastro</button>
         </form>
       ) : activeTab === 'list' ? (
         <div className="space-y-6">
           <div className="grid grid-cols-3 gap-2">
-            <div className="bg-white p-4 rounded-2xl border border-slate-100 text-center">
-              <p className="text-[8px] font-black text-slate-400 uppercase">Total</p>
-              <p className="text-xl font-black text-slate-800">{stats.total}</p>
-            </div>
-            <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-center">
-              <p className="text-[8px] font-black text-orange-400 uppercase">Pendentes</p>
-              <p className="text-xl font-black text-orange-600">{stats.pending}</p>
-            </div>
-            <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-center">
-              <p className="text-[8px] font-black text-green-400 uppercase">Aprovados</p>
-              <p className="text-xl font-black text-green-600">{stats.approved}</p>
-            </div>
+            <div className="bg-white p-4 rounded-2xl border border-slate-100 text-center"><p className="text-[8px] font-black text-slate-400 uppercase">Total</p><p className="text-xl font-black text-slate-800">{stats.total}</p></div>
+            <div className="bg-orange-50 p-4 rounded-2xl border border-orange-100 text-center"><p className="text-[8px] font-black text-orange-400 uppercase">Pendentes</p><p className="text-xl font-black text-orange-600">{stats.pending}</p></div>
+            <div className="bg-green-50 p-4 rounded-2xl border border-green-100 text-center"><p className="text-[8px] font-black text-green-400 uppercase">Aprovados</p><p className="text-xl font-black text-green-600">{stats.approved}</p></div>
           </div>
-
-          <div className="space-y-3">
-            <div className="relative">
-              <i className="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-300"></i>
-              <input 
-                type="text" 
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por nome ou cidade..."
-                className="w-full p-4 pl-12 bg-white border border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-medium text-sm"
-              />
-            </div>
-            <div className="flex gap-2">
-              {(['all', 'pending', 'approved'] as const).map(f => (
-                <button
-                  key={f}
-                  onClick={() => setStatusFilter(f)}
-                  className={`px-4 py-2 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${
-                    statusFilter === f ? 'bg-slate-800 text-white' : 'bg-white text-slate-400 border border-slate-100'
-                  }`}
-                >
-                  {f === 'all' ? 'Todos' : f === 'pending' ? 'Pendentes' : 'Aprovados'}
-                </button>
-              ))}
-            </div>
-          </div>
-
+          <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Buscar por nome ou cidade..." className="w-full p-4 bg-white border border-slate-100 rounded-2xl outline-none focus:border-blue-500 font-medium text-sm" />
           <div className="space-y-4">
-            {filteredTechs.length === 0 ? (
-              <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-slate-200">
-                <i className="fa-solid fa-folder-open text-slate-200 text-4xl mb-3"></i>
-                <p className="text-slate-400 font-bold">Nenhum registro encontrado.</p>
-              </div>
-            ) : (
-              filteredTechs.sort((a,b) => b.createdAt - a.createdAt).map(tech => (
-                <div key={tech.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm group">
-                  <div className="flex justify-between items-start mb-4">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center font-black text-lg ${
-                        tech.status === 'approved' ? 'bg-green-100 text-green-600' : 'bg-orange-100 text-orange-600'
-                      }`}>
-                        {tech.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-slate-800">{tech.name}</h4>
-                          {tech.isVerified && <i className="fa-solid fa-circle-check text-blue-500 text-xs"></i>}
-                        </div>
-                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">
-                          {tech.city} • <span className="text-blue-500">{tech.phone}</span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className={`px-2 py-1 rounded-full text-[8px] font-black uppercase tracking-widest ${
-                      tech.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'
-                    }`}>
-                      {tech.status}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {tech.specialties.map(s => (
-                      <span key={s} className="px-2 py-1 bg-slate-50 text-slate-400 rounded-md text-[8px] font-bold uppercase border border-slate-100">
-                        {s}
-                      </span>
-                    ))}
-                  </div>
-
-                  <div className="flex gap-2">
-                    {tech.paymentProof && (
-                      <button 
-                        onClick={() => openProof(tech.paymentProof!)}
-                        className="flex-1 py-3 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl text-[10px] font-black uppercase tracking-widest border border-slate-100 flex items-center justify-center gap-2"
-                      >
-                        <i className="fa-solid fa-receipt"></i>
-                        Ver Comprovante
-                      </button>
-                    )}
-                    
-                    {tech.status === 'pending' && (
-                      <button 
-                        onClick={() => handleApproveTechnician(tech.id)}
-                        className="flex-1 py-3 bg-green-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-green-100 active:scale-95 transition-all"
-                      >
-                        Aprovar
-                      </button>
-                    )}
-                    
-                    <button 
-                      onClick={() => {
-                        if(confirm("Deseja deletar este cadastro permanentemente?")) {
-                          const updated = technicians.filter(t => t.id !== tech.id);
-                          localStorage.setItem('technicians', JSON.stringify(updated));
-                          setTechnicians(updated);
-                        }
-                      }}
-                      className="w-12 h-12 flex items-center justify-center bg-red-50 text-red-500 rounded-xl hover:bg-red-500 hover:text-white transition-all"
-                    >
-                      <i className="fa-solid fa-trash-can"></i>
-                    </button>
-                  </div>
+            {filteredTechs.map(tech => (
+              <div key={tech.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                <div className="flex justify-between items-start mb-4">
+                  <div><h4 className="font-bold text-slate-800">{tech.name}</h4><p className="text-[10px] text-slate-400 font-bold uppercase">{tech.city} • {tech.phone}</p></div>
+                  <div className={`px-2 py-1 rounded-full text-[8px] font-black uppercase ${tech.status === 'approved' ? 'bg-green-100 text-green-700' : 'bg-orange-100 text-orange-700'}`}>{tech.status}</div>
                 </div>
-              ))
-            )}
+                <div className="flex gap-2">
+                  {tech.paymentProof && <button onClick={() => openProof(tech.paymentProof!)} className="flex-1 py-3 bg-slate-50 text-slate-600 rounded-xl text-[10px] font-black uppercase border border-slate-100">Ver Comprovante</button>}
+                  {tech.status === 'pending' && <button onClick={() => handleApproveTechnician(tech.id)} className="flex-1 py-3 bg-green-600 text-white rounded-xl text-[10px] font-black uppercase shadow-lg shadow-green-100">Aprovar</button>}
+                  <button onClick={() => { if(confirm("Deletar permanentemente?")) setTechnicians(prev => prev.filter(t => t.id !== tech.id)) }} className="w-12 h-12 flex items-center justify-center bg-red-50 text-red-500 rounded-xl"><i className="fa-solid fa-trash-can"></i></button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       ) : activeTab === 'settings' ? (
-        <div className="bg-white p-8 rounded-3xl border-2 border-slate-100 shadow-sm animate-in fade-in">
-          <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-            <i className="fa-solid fa-gears text-blue-600"></i>
-            Configurações Globais
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">Taxa de Cadastro (Exibida para Técnicos)</label>
-              <div className="relative">
-                <span className="absolute left-4 top-1/2 -translate-y-1/2 font-black text-slate-400">R$</span>
-                <input 
-                  type="number" 
-                  value={systemFee}
-                  onChange={(e) => setSystemFee(e.target.value)}
-                  className="w-full p-4 pl-12 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-600 text-xl font-black"
-                />
+        <div className="space-y-6 animate-in fade-in">
+          <div className="bg-white p-8 rounded-3xl border-2 border-slate-100 shadow-sm">
+            <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2"><i className="fa-solid fa-gears text-blue-600"></i> Financeiro</h3>
+            <label className="block text-[10px] font-black uppercase text-slate-400 mb-2 tracking-widest">Taxa de Cadastro (R$)</label>
+            <input type="number" value={systemFee} onChange={(e) => setSystemFee(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-600 text-xl font-black mb-4" />
+            <button onClick={() => { localStorage.setItem('system_fee', systemFee); alert("Taxa atualizada!"); }} className="w-full py-5 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-50">Salvar Taxa</button>
+          </div>
+
+          <div className="bg-white p-8 rounded-3xl border-2 border-slate-100 shadow-sm">
+            <h3 className="text-lg font-black text-slate-800 mb-6 flex items-center gap-2"><i className="fa-solid fa-shield-halved text-blue-600"></i> Segurança</h3>
+            <form onSubmit={handleChangeAdminPassword} className="space-y-4">
+              <div>
+                <label className="block text-[10px] font-black uppercase text-slate-400 mb-1 tracking-widest">Senha Atual</label>
+                <input type="password" value={currentPassInput} onChange={(e) => setCurrentPassInput(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-600 font-medium" placeholder="Digite a senha atual" />
               </div>
-            </div>
-            <button 
-              onClick={() => { localStorage.setItem('system_fee', systemFee); alert("Taxa atualizada!"); }}
-              className="w-full py-5 bg-blue-600 text-white font-black rounded-2xl shadow-xl shadow-blue-50 hover:bg-blue-700 transition-all"
-            >
-              Salvar Alterações
-            </button>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1 tracking-widest">Nova Senha</label>
+                  <input type="password" value={newPassInput} onChange={(e) => setNewPassInput(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-600 font-medium" placeholder="Min. 4 chars" />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-black uppercase text-slate-400 mb-1 tracking-widest">Confirmar</label>
+                  <input type="password" value={confirmPassInput} onChange={(e) => setConfirmPassInput(e.target.value)} className="w-full p-4 bg-slate-50 border-2 border-transparent rounded-2xl outline-none focus:border-blue-600 font-medium" placeholder="Repita a nova senha" />
+                </div>
+              </div>
+              
+              {passError && <p className="text-xs text-red-500 font-bold bg-red-50 p-3 rounded-xl border border-red-100">{passError}</p>}
+              {passSuccess && <p className="text-xs text-green-600 font-bold bg-green-50 p-3 rounded-xl border border-green-100">Senha alterada com sucesso!</p>}
+              
+              <button type="submit" className="w-full py-5 bg-slate-900 text-white font-black rounded-2xl shadow-xl hover:bg-black transition-all">Alterar Senha Administrativa</button>
+            </form>
           </div>
         </div>
       ) : null}
